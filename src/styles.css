@@ -95,7 +95,9 @@ body {
   right: 10px;
   display: flex;
   gap: 2px;
-  z-index: 4;
+  /* Above all overlays (z 5–6) so close/refresh stay reachable
+     even when an overlay is on. */
+  z-index: 8;
 }
 
 .icon-btn {
