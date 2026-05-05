@@ -20,9 +20,9 @@ A tray app with a popup window and global shortcut for live Claude session usage
 ## What it does
 
 Lives in your system tray. Click the icon — or hit your bound keyboard
-shortcut — and a small glass-paper popup window appears showing the
-same numbers `claude.ai/settings/usage` shows: current 5-hour session
-percent and time until reset. Auto-refreshes every minute while open.
+shortcut — and a small popup window shows the same numbers
+`claude.ai/settings/usage` shows: current 5-hour session percent and
+time until reset. Auto-refreshes every minute while open.
 
 Sourced directly from claude.ai's own internal usage endpoint, so the
 percent matches the dashboard exactly.
