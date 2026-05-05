@@ -1,0 +1,3 @@
+# Defaults are good. Keep this file so contributors know there's
+# a single source of truth for `cargo fmt` behaviour.
+edition = "2021"

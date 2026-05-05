@@ -1,0 +1,30 @@
+[package]
+name = "claude-hourglass"
+version = "0.1.0"
+description = "Tray indicator + popup window showing live Claude usage"
+authors = ["Abdullah Alattar"]
+edition = "2021"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/AbdullahAlattar/claude-hourglass"
+homepage = "https://github.com/AbdullahAlattar/claude-hourglass"
+readme = "../README.md"
+
+[lib]
+name = "claude_hourglass_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["tray-icon"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tauri-plugin-single-instance = "2"
+reqwest = { version = "0.12", default-features = false, features = [
+    "json",
+    "rustls-tls",
+] }
+
+[target.'cfg(any(target_os = "macos", windows, target_os = "linux"))'.dependencies]
+tauri-plugin-global-shortcut = "2"

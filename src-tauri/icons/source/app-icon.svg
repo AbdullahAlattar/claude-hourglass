@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- Anthropic cream rounded-square -->
+  <rect x="0" y="0" width="1024" height="1024" rx="224" ry="224" fill="#faf9f5"/>
+
+  <!-- Subtle inner border -->
+  <rect x="2" y="2" width="1020" height="1020" rx="222" ry="222"
+        fill="none" stroke="#e8e6dc" stroke-width="4"/>
+
+  <!-- Claude-style sparkle / 4-pointed burst.
+       Two superimposed 4-pointed stars, the diagonal pair shorter,
+       all meeting at the center. Drawn as filled paths so the points
+       taper instead of looking like uniform-stroke lines. -->
+  <g transform="translate(512 512)">
+    <!-- Long axis: vertical -->
+    <path d="M 0 -340 C 28 -180 60 -120 0 0 C -60 -120 -28 -180 0 -340 Z"
+          fill="#d97757"/>
+    <!-- Long axis: horizontal -->
+    <path d="M 340 0 C 180 28 120 60 0 0 C 120 -60 180 -28 340 0 Z"
+          fill="#d97757"/>
+    <!-- Mirror long axes for the bottom and left halves -->
+    <path d="M 0 340 C 28 180 60 120 0 0 C -60 120 -28 180 0 340 Z"
+          fill="#d97757"/>
+    <path d="M -340 0 C -180 28 -120 60 0 0 C -120 -60 -180 -28 -340 0 Z"
+          fill="#d97757"/>
+
+    <!-- Shorter diagonal arms -->
+    <g transform="rotate(45)">
+      <path d="M 0 -210 C 18 -110 38 -70 0 0 C -38 -70 -18 -110 0 -210 Z"
+            fill="#c25f3f" opacity="0.85"/>
+      <path d="M 210 0 C 110 18 70 38 0 0 C 70 -38 110 -18 210 0 Z"
+            fill="#c25f3f" opacity="0.85"/>
+      <path d="M 0 210 C 18 110 38 70 0 0 C -38 70 -18 110 0 210 Z"
+            fill="#c25f3f" opacity="0.85"/>
+      <path d="M -210 0 C -110 18 -70 38 0 0 C -70 -38 -110 -18 -210 0 Z"
+            fill="#c25f3f" opacity="0.85"/>
+    </g>
+  </g>
+</svg>

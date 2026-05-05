@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Setup help
+    url: https://github.com/AbdullahAlattar/claude-hourglass#first-run-setup
+    about: Cookie extraction, GNOME shortcut binding, autostart — see the README first.

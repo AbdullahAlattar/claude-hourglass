@@ -1,0 +1,406 @@
+/* Claude Usage Tray — Anthropic-brand horizontal panel.
+   Palette and type chosen to evoke Anthropic's identity:
+   warm cream paper, single coral accent, serif display + sans body. */
+
+@property --pct {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 0%;
+}
+
+:root {
+  --bg: #faf9f5;
+  --bg-elevated: #ffffff;
+  --hairline: #e8e6dc;
+  --hairline-strong: #d8d4c5;
+  --text: #141413;
+  --text-dim: #6f6e68;
+  --text-faint: #b0aea5;
+  --accent: #d97757;
+  --accent-deep: #c25f3f;
+
+  --shadow:
+    0 14px 32px -10px rgba(20, 20, 19, 0.18),
+    0 4px 10px -4px rgba(20, 20, 19, 0.08),
+    0 0 0 1px var(--hairline);
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  color: var(--text);
+  font-family: "Inter Variable", "Inter Variable", "Inter", system-ui, sans-serif;
+  font-size: 13px;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+  overflow: hidden;
+}
+
+/* ── Panel ─────────────────────────────────────────────────────── */
+
+.panel {
+  position: absolute;
+  inset: 6px;
+  background: var(--bg);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  isolation: isolate;
+  transform: translateX(20px);
+  opacity: 0;
+  transition:
+    transform 280ms var(--ease-spring),
+    opacity 200ms var(--ease-out);
+}
+
+.panel.is-shown {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+/* subtle paper texture — barely visible, just enough to break the flat surface */
+.panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+
+.panel > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Controls (top-right corner) ───────────────────────────────── */
+
+.controls {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  gap: 2px;
+  z-index: 4;
+}
+
+.icon-btn {
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--text-faint);
+  cursor: pointer;
+  transition:
+    color 160ms var(--ease-out),
+    background 160ms var(--ease-out),
+    border-color 160ms var(--ease-out),
+    transform 200ms var(--ease-spring);
+}
+
+.icon-btn:hover {
+  color: var(--text);
+  background: rgba(20, 20, 19, 0.04);
+  border-color: var(--hairline);
+}
+
+.icon-btn:active { transform: scale(0.92); }
+
+#refresh.is-spinning svg { animation: spin 700ms var(--ease-out); }
+@keyframes spin {
+  from { transform: rotate(0); }
+  to { transform: rotate(360deg); }
+}
+
+/* ── Display (the two figures) ─────────────────────────────────── */
+
+.display {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: stretch;
+  padding: 0 28px;
+}
+
+.block {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 8px;
+}
+
+.block:last-of-type {
+  align-items: flex-start;
+  padding-left: 28px;
+}
+
+.vrule {
+  width: 1px;
+  align-self: stretch;
+  background: var(--hairline);
+  margin: 22px 0;
+}
+
+.figure {
+  font-family: "Source Serif 4 Variable", "Source Serif 4 Variable", "Source Serif 4", Georgia, serif;
+  font-weight: 300;
+  line-height: 0.92;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+  display: flex;
+  align-items: baseline;
+}
+
+.figure-pct {
+  color: var(--accent);
+  font-size: 72px;
+}
+
+.figure-pct .sym {
+  font-size: 30px;
+  margin-left: 2px;
+  font-weight: 400;
+  color: var(--accent-deep);
+  opacity: 0.75;
+}
+
+.figure-time {
+  font-size: 44px;
+  color: var(--text);
+}
+
+.figure-time .unit {
+  font-size: 22px;
+  margin: 0 2px 0 1px;
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+.caption {
+  font-family: "Inter Variable", "Inter", system-ui, sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+/* ── Progress hairline at the very bottom ──────────────────────── */
+
+.progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 5px;
+  background: var(--hairline-strong);
+  z-index: 2;
+}
+
+.progress-fill {
+  height: 100%;
+  width: var(--pct, 0%);
+  background: var(--accent);
+  transition: width 700ms var(--ease-out);
+  box-shadow: 0 -1px 6px -1px color-mix(in oklch, var(--accent) 50%, transparent);
+}
+
+/* ── State: loading / idle / error  */
+
+.panel[data-state="loading"] .figure-pct,
+.panel[data-state="loading"] .figure-time {
+  color: var(--text-faint);
+}
+
+/* ── Setup overlay (paste session key) ─────────────────────────── */
+
+.setup-overlay,
+.error-overlay,
+.empty-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  padding: 18px 22px;
+  background: var(--bg);
+  border-radius: 16px;
+  animation: cal-rise 220ms var(--ease-out);
+}
+
+.setup-overlay[hidden],
+.error-overlay[hidden],
+.empty-overlay[hidden] {
+  display: none;
+}
+
+@keyframes cal-rise {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.cal-title {
+  font-family: "Source Serif 4 Variable", "Source Serif 4", Georgia, serif;
+  font-size: 16px;
+  font-weight: 400;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.cal-help {
+  font-size: 11px;
+  color: var(--text-dim);
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+
+.cal-help b {
+  font-weight: 500;
+  color: var(--text);
+  background: var(--hairline);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  font-size: 10.5px;
+}
+
+.cal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.setup-text {
+  width: 100%;
+  padding: 8px 12px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  outline: none;
+  color: var(--text);
+  font-family: "Inter Variable", "Inter", system-ui, sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  transition: border-color 160ms var(--ease-out), box-shadow 160ms var(--ease-out);
+}
+
+.setup-text::placeholder {
+  color: var(--text-faint);
+}
+
+.setup-text:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--accent) 18%, transparent);
+}
+
+.cal-current {
+  font-size: 10px;
+  color: var(--text-faint);
+  letter-spacing: 0.04em;
+  font-family: "Inter Variable", "Inter", system-ui, sans-serif;
+  text-align: right;
+}
+
+.cal-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.cal-btn {
+  flex: 1;
+  padding: 7px 10px;
+  font-family: "Inter Variable", "Inter", system-ui, sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  border-radius: 6px;
+  cursor: pointer;
+  transition:
+    background 160ms var(--ease-out),
+    border-color 160ms var(--ease-out),
+    color 160ms var(--ease-out),
+    transform 160ms var(--ease-spring);
+}
+.cal-btn:active { transform: scale(0.97); }
+
+.cal-btn-ghost {
+  background: transparent;
+  border: 1px solid var(--hairline);
+  color: var(--text-dim);
+}
+.cal-btn-ghost:hover {
+  border-color: var(--hairline-strong);
+  color: var(--text);
+}
+
+.cal-btn-primary {
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  color: #fff;
+}
+.cal-btn-primary:hover {
+  background: var(--accent-deep);
+  border-color: var(--accent-deep);
+}
+
+/* ── Error / empty overlays ────────────────────────────────────── */
+
+.empty-title {
+  font-family: "Source Serif 4 Variable", "Source Serif 4", Georgia, serif;
+  font-size: 16px;
+  font-weight: 400;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.empty-body {
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+.error-overlay .empty-body {
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  font-size: 10.5px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  user-select: text;
+  -webkit-user-select: text;
+  background: var(--bg-elevated);
+  border: 1px solid var(--hairline);
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin-top: 6px;
+  max-height: 96px;
+  overflow-y: auto;
+}
+
+.empty-overlay {
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+.empty-overlay:hover { background: var(--bg-elevated); }

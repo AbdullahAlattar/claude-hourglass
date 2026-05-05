@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: "-D warnings"
+
+jobs:
+  rust:
+    name: rust (${{ matrix.kind }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        kind: [check, clippy, fmt]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Linux build deps
+        if: matrix.kind != 'fmt'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            librsvg2-dev \
+            libayatana-appindicator3-dev \
+            build-essential \
+            libssl-dev \
+            libxdo-dev
+
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          components: rustfmt, clippy
+
+      - uses: actions/setup-node@v4
+        if: matrix.kind != 'fmt'
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: npm install (frontend deps for tauri-build codegen)
+        if: matrix.kind != 'fmt'
+        run: |
+          npm ci
+          npm run build
+
+      - name: cargo fmt
+        if: matrix.kind == 'fmt'
+        working-directory: src-tauri
+        run: cargo fmt --all -- --check
+
+      - name: cargo clippy
+        if: matrix.kind == 'clippy'
+        working-directory: src-tauri
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+      - name: cargo check
+        if: matrix.kind == 'check'
+        working-directory: src-tauri
+        run: cargo check --all-targets --all-features
+
+  typescript:
+    name: typescript
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npx tsc --noEmit
