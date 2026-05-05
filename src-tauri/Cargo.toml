@@ -1,6 +1,6 @@
 [package]
 name = "claude-hourglass"
-version = "0.1.1"
+version = "0.1.2"
 description = "Tray indicator + popup window showing live Claude usage"
 authors = ["Abdullah Alattar"]
 edition = "2021"

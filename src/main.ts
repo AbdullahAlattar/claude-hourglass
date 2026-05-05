@@ -77,7 +77,12 @@ function showOverlay(which: "none" | "empty" | "error" | "setup", msg?: string) 
   }
 }
 
+// Last successful render — used by closeSetup to restore the underlying
+// overlay state when the user dismisses the setup form.
+let lastReport: UsageReport | null = null;
+
 function render(r: UsageReport) {
+  lastReport = r;
   if (r.needs_setup) {
     showOverlay("empty");
     panel.dataset.state = "idle";
@@ -115,10 +120,9 @@ async function refresh() {
   refreshBtn.classList.add("is-spinning");
   try {
     const r = await invoke<UsageReport>("get_usage");
-    console.log("[claude-usage-tray] get_usage =>", r);
     render(r);
   } catch (e) {
-    console.error("[claude-usage-tray] invoke error:", e);
+    console.error("[claude-hourglass] invoke error:", e);
     const detail =
       e instanceof Error
         ? `${e.name}: ${e.message}`
@@ -142,12 +146,17 @@ async function openSetup() {
     setupCurrent.textContent = "not connected";
   }
   setupInput.value = "";
-  setupOverlay.hidden = false;
+  // Route through showOverlay so the empty / error overlay underneath
+  // is hidden — otherwise the setup form renders behind them.
+  showOverlay("setup");
   requestAnimationFrame(() => setupInput.focus());
 }
 
 function closeSetup() {
+  // Re-render based on current state so we restore the right overlay
+  // (empty / error / none) instead of leaving whatever was underneath.
   setupOverlay.hidden = true;
+  if (lastReport) render(lastReport);
 }
 
 async function submitSetup() {

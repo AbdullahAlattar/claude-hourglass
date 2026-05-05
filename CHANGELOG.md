@@ -6,6 +6,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-05-05
+
+### Fixed
+
+- "Not connected" panel was unresponsive: clicking it ran the handler
+  but the setup form rendered behind the empty overlay (same z-index,
+  later in DOM order). Routed `openSetup()` and `closeSetup()` through
+  `showOverlay()` so overlay state is set atomically.
+
 ## [0.1.1] - 2026-05-05
 
 ### Fixed
@@ -37,6 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Self-hosted fonts (no Google CDN dependency at runtime).
 - Atomic config writes at `0600` to keep the cookie file private.
 
-[Unreleased]: https://github.com/AbdullahAlattar/claude-hourglass/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/AbdullahAlattar/claude-hourglass/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/AbdullahAlattar/claude-hourglass/releases/tag/v0.1.2
 [0.1.1]: https://github.com/AbdullahAlattar/claude-hourglass/releases/tag/v0.1.1
 [0.1.0]: https://github.com/AbdullahAlattar/claude-hourglass/releases/tag/v0.1.0
