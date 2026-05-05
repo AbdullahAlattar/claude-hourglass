@@ -19,7 +19,7 @@ jobs:
       matrix:
         kind: [check, clippy, fmt]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install Linux build deps
         if: matrix.kind != 'fmt'
@@ -37,7 +37,7 @@ jobs:
         with:
           components: rustfmt, clippy
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         if: matrix.kind != 'fmt'
         with:
           node-version: 20
@@ -68,8 +68,8 @@ jobs:
     name: typescript
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 20
           cache: npm
