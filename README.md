@@ -2,7 +2,7 @@
 
 # Claude Hourglass
 
-A small tray indicator for live Claude.ai session usage on Linux.
+A small tray indicator for live Claude session usage on Linux.
 
 [![CI](https://github.com/AbdullahAlattar/claude-hourglass/actions/workflows/ci.yml/badge.svg)](https://github.com/AbdullahAlattar/claude-hourglass/actions/workflows/ci.yml)
 [![License: MIT OR Apache-2.0](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](#license)
@@ -39,10 +39,6 @@ sudo dnf install ./claude-hourglass-*.x86_64.rpm
 
 # Ubuntu / Debian
 sudo apt install ./claude-hourglass_*_amd64.deb
-
-# Any Linux (portable AppImage)
-chmod +x ./claude-hourglass_*_amd64.AppImage
-./claude-hourglass_*_amd64.AppImage
 ```
 
 > **GNOME users:** the tray icon needs the
@@ -52,7 +48,7 @@ chmod +x ./claude-hourglass_*_amd64.AppImage
 ## First-run setup
 
 The popup launches with **Not connected**. Click the gear icon and paste
-your Claude.ai session cookie:
+your Claude session cookie:
 
 1. Open <https://claude.ai> in your browser, log in.
 2. DevTools (`F12`) → **Application** tab → **Cookies** → `https://claude.ai`.
@@ -173,7 +169,7 @@ single-glance.
 > endorsed by, or supported by Anthropic.** "Claude" is a trademark of
 > Anthropic.
 >
-> Claude Hourglass reads from a non-public Claude.ai endpoint
+> Claude Hourglass reads from a non-public Claude endpoint
 > (`/api/organizations/{org_id}/usage`) using your session cookie — the
 > same one your browser uses. Anthropic could change or remove this
 > endpoint without notice; the app would break until updated. Use at
