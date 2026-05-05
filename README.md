@@ -2,11 +2,10 @@
 
 # Claude Hourglass
 
-A small tray indicator for live Claude session usage on Linux.
+A tray app with a popup window and global shortcut for live Claude session usage on Linux.
 
-[![CI](https://github.com/AbdullahAlattar/claude-hourglass/actions/workflows/ci.yml/badge.svg)](https://github.com/AbdullahAlattar/claude-hourglass/actions/workflows/ci.yml)
-[![License: MIT OR Apache-2.0](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](#license)
-[![Built with Tauri 2](https://img.shields.io/badge/built%20with-Tauri%202-d97757.svg)](https://tauri.app)
+[![License: MIT OR Apache-2.0](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue?style=for-the-badge)](#license)
+[![Built with Tauri 2](https://img.shields.io/badge/built%20with-Tauri%202-d97757?style=for-the-badge)](https://tauri.app)
 
 <img src="docs/tray.png" width="480" alt="Orange sparkle tray icon in the GNOME panel" />
 
@@ -20,12 +19,13 @@ A small tray indicator for live Claude session usage on Linux.
 
 ## What it does
 
-Shows the same numbers `claude.ai/settings/usage` shows: current
-5-hour session percent and time until reset. A small tray icon opens a
-glass-paper popup; auto-refreshes every minute while open.
+Lives in your system tray. Click the icon — or hit your bound keyboard
+shortcut — and a small glass-paper popup window appears showing the
+same numbers `claude.ai/settings/usage` shows: current 5-hour session
+percent and time until reset. Auto-refreshes every minute while open.
 
 Sourced directly from claude.ai's own internal usage endpoint, so the
-percent matches the dashboard exactly — no calibration, no drift.
+percent matches the dashboard exactly.
 
 ## Install
 
@@ -61,9 +61,8 @@ claude.ai itself. Sign out of claude.ai or click **Disconnect** to revoke.
 
 ## Keyboard shortcut
 
-Tauri's built-in global-shortcut plugin doesn't work on Wayland. Bind a
-shortcut in your desktop environment instead — point it at the binary
-with `--toggle`:
+Bind a keyboard shortcut in your desktop environment to toggle the
+popup — point it at the binary with `--toggle`:
 
 ```
 /usr/bin/claude-hourglass --toggle
@@ -107,14 +106,15 @@ CLI flags supported: `--toggle`, `--show`, `--hide`.
 
 ## Auto-start at login
 
-Save as `~/.config/autostart/claude-hourglass.desktop`:
+Save the following as `~/.config/autostart/claude-hourglass.desktop`.
+This is the freedesktop XDG Autostart format — works on GNOME, KDE,
+XFCE, Cinnamon, MATE, and any other freedesktop-compliant DE.
 
 ```ini
 [Desktop Entry]
 Type=Application
 Name=Claude Hourglass
 Exec=/usr/bin/claude-hourglass
-X-GNOME-Autostart-enabled=true
 ```
 
 ## Build from source
