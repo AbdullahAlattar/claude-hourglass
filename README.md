@@ -2,7 +2,7 @@
 
 # Claude Hourglass
 
-A tray app with a popup window and global shortcut for live Claude session usage on Linux.
+A tray app with a popup window and global shortcut for live Claude session usage.
 
 [![License: MIT OR Apache-2.0](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue?style=for-the-badge)](#license)
 [![Built with Tauri 2](https://img.shields.io/badge/built%20with-Tauri%202-d97757?style=for-the-badge)](https://tauri.app)
