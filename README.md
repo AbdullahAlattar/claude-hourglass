@@ -8,7 +8,11 @@ A small tray indicator for live Claude.ai session usage on Linux.
 [![License: MIT OR Apache-2.0](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](#license)
 [![Built with Tauri 2](https://img.shields.io/badge/built%20with-Tauri%202-d97757.svg)](https://tauri.app)
 
-<img src="docs/screenshot.png" width="540" alt="Claude Hourglass popup showing 19% session used and 4h 42m until reset" />
+<img src="docs/tray.png" width="480" alt="Orange sparkle tray icon in the GNOME panel" />
+
+<br />
+
+<img src="docs/screenshot.png" width="520" alt="Claude Hourglass popup showing 19% session used and 4h 42m until reset" />
 
 </div>
 
