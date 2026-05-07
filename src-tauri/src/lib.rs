@@ -1,15 +1,30 @@
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
+use std::str::FromStr;
 use std::time::Duration;
 use tauri::{
     menu::{Menu, MenuItem},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
     AppHandle, Emitter, Manager,
 };
-use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
+use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutState};
 
 const POPUP_LABEL: &str = "main";
 const USER_AGENT: &str = "Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0";
+const DEFAULT_SHORTCUT: &str = "Ctrl+Alt+L";
+
+// ── Position ─────────────────────────────────────────────────────
+
+#[derive(Serialize, Deserialize, Default, Clone, Copy, Debug, PartialEq, Eq)]
+#[serde(rename_all = "kebab-case")]
+enum Position {
+    TopLeft,
+    TopRight,
+    BottomLeft,
+    #[default]
+    BottomRight,
+    Center,
+}
 
 // ── Config ───────────────────────────────────────────────────────
 
@@ -19,6 +34,13 @@ struct AppConfig {
     session_key: Option<String>,
     /// Cached organization UUID — auto-discovered on first call.
     org_id: Option<String>,
+    /// Where on the primary monitor the popup appears. Default: bottom-right.
+    #[serde(default)]
+    position: Option<Position>,
+    /// Global shortcut in Electron-accelerator format (e.g. "Ctrl+Alt+L").
+    /// None = use the built-in default. Doesn't fire on Wayland.
+    #[serde(default)]
+    shortcut: Option<String>,
 }
 
 // Manual Debug to keep session_key out of any accidental log output.
@@ -30,6 +52,8 @@ impl std::fmt::Debug for AppConfig {
                 &self.session_key.as_ref().map(|_| "<redacted>"),
             )
             .field("org_id", &self.org_id)
+            .field("position", &self.position)
+            .field("shortcut", &self.shortcut)
             .finish()
     }
 }
@@ -46,8 +70,6 @@ fn config_path() -> Option<PathBuf> {
 }
 
 /// One-time migration from the pre-rename config directory.
-/// Moves `~/.config/claude-usage-tray/config.json` → `~/.config/claude-hourglass/config.json`
-/// when the new path is empty and the legacy one exists.
 fn migrate_legacy_config() {
     let Some(new_path) = config_path() else {
         return;
@@ -95,9 +117,7 @@ fn write_config(cfg: &AppConfig) -> Result<(), String> {
     std::fs::create_dir_all(parent).map_err(|e| format!("mkdir failed: {e}"))?;
     let body = serde_json::to_string_pretty(cfg).map_err(|e| e.to_string())?;
 
-    // Atomic write: create tmp file with 0600 from the start, then rename
-    // over the destination. Avoids the TOCTOU window of write-then-chmod
-    // where the cleartext file briefly has default umask permissions.
+    // Atomic write: tmp file with mode 0600 from creation, then rename.
     let tmp = parent.join(".config.json.tmp");
 
     #[cfg(unix)]
@@ -123,6 +143,40 @@ fn write_config(cfg: &AppConfig) -> Result<(), String> {
     std::fs::rename(&tmp, &path).map_err(|e| format!("rename failed: {e}"))
 }
 
+// ── Shortcut helpers ─────────────────────────────────────────────
+
+fn parse_shortcut(s: &str) -> Result<Shortcut, String> {
+    let sc = Shortcut::from_str(s).map_err(|e| format!("invalid shortcut '{s}': {e}"))?;
+    if sc.mods.is_empty() {
+        return Err(format!(
+            "shortcut '{s}' must include at least one modifier (Ctrl/Alt/Shift/Cmd)"
+        ));
+    }
+    Ok(sc)
+}
+
+/// Whether the in-app global-shortcut plugin can actually deliver events
+/// on the current platform/session. Wayland blocks XGrabKey, so on Linux
+/// Wayland sessions this returns false even though `register()` succeeds.
+fn shortcut_supported() -> bool {
+    if !cfg!(target_os = "linux") {
+        return true;
+    }
+    if std::env::var("WAYLAND_DISPLAY").is_ok() {
+        return false;
+    }
+    // Some compositors (nested setups, certain SSH-forwarded sessions) set
+    // XDG_SESSION_TYPE=wayland but not WAYLAND_DISPLAY until first connection.
+    // Use starts_with so variants like "wayland-gnome" are also caught.
+    if std::env::var("XDG_SESSION_TYPE")
+        .map(|v| v.to_ascii_lowercase().starts_with("wayland"))
+        .unwrap_or(false)
+    {
+        return false;
+    }
+    true
+}
+
 // ── Usage report (sent to frontend) ──────────────────────────────
 
 #[derive(Serialize, Default, Clone, Debug)]
@@ -135,15 +189,21 @@ struct UsageReport {
     org_id: Option<String>,
 }
 
+#[derive(Serialize, Clone, Debug)]
+struct ConfigSummary {
+    session_key: Option<String>,
+    org_id: Option<String>,
+    position: Position,
+    shortcut: String,
+    shortcut_supported: bool,
+}
+
 // ── claude.ai API ────────────────────────────────────────────────
 
 fn build_client() -> Result<reqwest::Client, String> {
     reqwest::Client::builder()
         .timeout(Duration::from_secs(20))
         .user_agent(USER_AGENT)
-        // Don't follow 3xx — claude.ai redirects unauthenticated requests
-        // to the login HTML page, which would then fail JSON parsing with
-        // a misleading error. Treat redirects as auth failures explicitly.
         .redirect(reqwest::redirect::Policy::none())
         .build()
         .map_err(|e| format!("http client init failed: {e}"))
@@ -251,10 +311,6 @@ async fn get_usage() -> Result<UsageReport, String> {
     } else {
         match fetch_org_id(&client, &session_key).await {
             Ok(id) => {
-                // Re-read before patching — if the user changed session_key
-                // while we were discovering the org, our cached `cfg` is stale.
-                // Only persist the new org_id when the key still matches what
-                // we discovered against; otherwise the next call will rediscover.
                 let mut latest = read_config();
                 if latest.session_key.as_deref() == Some(session_key.as_str()) {
                     latest.org_id = Some(id.clone());
@@ -284,12 +340,17 @@ async fn get_usage() -> Result<UsageReport, String> {
 }
 
 #[tauri::command]
-fn get_config() -> AppConfig {
+fn get_config() -> ConfigSummary {
     let cfg = read_config();
-    // Don't echo session_key back to the frontend except as a presence flag.
-    AppConfig {
+    ConfigSummary {
         session_key: cfg.session_key.as_ref().map(|_| "***".to_string()),
         org_id: cfg.org_id,
+        position: cfg.position.unwrap_or_default(),
+        shortcut: cfg
+            .shortcut
+            .clone()
+            .unwrap_or_else(|| DEFAULT_SHORTCUT.to_string()),
+        shortcut_supported: shortcut_supported(),
     }
 }
 
@@ -301,6 +362,49 @@ fn set_session_key(key: Option<String>) -> Result<(), String> {
     write_config(&cfg)
 }
 
+#[tauri::command]
+fn set_position(app: AppHandle, position: Position) -> Result<(), String> {
+    let mut cfg = read_config();
+    cfg.position = Some(position);
+    write_config(&cfg)?;
+    // Apply immediately if the popup is currently visible.
+    if let Some(window) = app.get_webview_window(POPUP_LABEL) {
+        let _ = position_window(&window, position);
+    }
+    Ok(())
+}
+
+#[tauri::command]
+fn set_shortcut(app: AppHandle, shortcut: String) -> Result<(), String> {
+    // Validate first so we don't lose the working old shortcut on a typo.
+    let new_shortcut = parse_shortcut(&shortcut)?;
+
+    // Capture old shortcut so we can roll back if registration of the new
+    // one fails (e.g. another app already grabbed that combo).
+    let old_str = read_config().shortcut.clone();
+    let old_shortcut = old_str.as_deref().and_then(|s| parse_shortcut(s).ok());
+
+    let gs = app.global_shortcut();
+    gs.unregister_all()
+        .map_err(|e| format!("unregister: {e}"))?;
+
+    if let Err(e) = gs.register(new_shortcut) {
+        // Roll back to the old shortcut so the user isn't stuck with nothing.
+        if let Some(old) = old_shortcut {
+            if let Err(rollback_err) = gs.register(old) {
+                eprintln!(
+                    "[claude-hourglass] new shortcut register failed AND rollback failed: {rollback_err}"
+                );
+            }
+        }
+        return Err(format!("register: {e}"));
+    }
+
+    let mut cfg = read_config();
+    cfg.shortcut = Some(shortcut);
+    write_config(&cfg)
+}
+
 // ── Window helpers ───────────────────────────────────────────────
 
 fn toggle_popup(app: &AppHandle) {
@@ -309,10 +413,13 @@ fn toggle_popup(app: &AppHandle) {
     };
     match window.is_visible() {
         Ok(true) => {
-            let _ = window.hide();
+            // Let the frontend run its fade-out animation; it calls
+            // window.hide() itself when the transition finishes.
+            let _ = app.emit("popup-hide", ());
         }
         _ => {
-            let _ = position_bottom_right(&window);
+            let pos = read_config().position.unwrap_or_default();
+            let _ = position_window(&window, pos);
             let _ = window.show();
             let _ = window.set_focus();
             let _ = app.emit("popup-shown", ());
@@ -320,7 +427,7 @@ fn toggle_popup(app: &AppHandle) {
     }
 }
 
-fn position_bottom_right(window: &tauri::WebviewWindow) -> tauri::Result<()> {
+fn position_window(window: &tauri::WebviewWindow, pos: Position) -> tauri::Result<()> {
     let Some(monitor) = window.current_monitor()? else {
         return Ok(());
     };
@@ -328,8 +435,19 @@ fn position_bottom_right(window: &tauri::WebviewWindow) -> tauri::Result<()> {
     let size = monitor.size();
     let win_size = window.outer_size()?;
     let margin = (16.0 * scale) as i32;
-    let x = size.width as i32 - win_size.width as i32 - margin;
-    let y = size.height as i32 - win_size.height as i32 - margin;
+
+    let w = size.width as i32;
+    let h = size.height as i32;
+    let ww = win_size.width as i32;
+    let wh = win_size.height as i32;
+
+    let (x, y) = match pos {
+        Position::TopLeft => (margin, margin),
+        Position::TopRight => (w - ww - margin, margin),
+        Position::BottomLeft => (margin, h - wh - margin),
+        Position::BottomRight => (w - ww - margin, h - wh - margin),
+        Position::Center => ((w - ww) / 2, (h - wh) / 2),
+    };
     window.set_position(tauri::PhysicalPosition::new(x, y))
 }
 
@@ -344,23 +462,23 @@ pub fn run() {
                 toggle_popup(app);
             } else if args.iter().any(|a| a == "--show") {
                 if let Some(window) = app.get_webview_window(POPUP_LABEL) {
-                    let _ = position_bottom_right(&window);
+                    let pos = read_config().position.unwrap_or_default();
+                    let _ = position_window(&window, pos);
                     let _ = window.show();
                     let _ = window.set_focus();
                     let _ = app.emit("popup-shown", ());
                 }
             } else if args.iter().any(|a| a == "--hide") {
-                if let Some(window) = app.get_webview_window(POPUP_LABEL) {
-                    let _ = window.hide();
-                }
+                // Frontend-driven fade-out, same as toggle.
+                let _ = app.emit("popup-hide", ());
             }
         }))
         .plugin(
             tauri_plugin_global_shortcut::Builder::new()
-                .with_handler(|app, shortcut, event| {
-                    if event.state == ShortcutState::Pressed
-                        && shortcut.matches(Modifiers::CONTROL | Modifiers::ALT, Code::KeyL)
-                    {
+                // We register exactly one shortcut at a time, so any pressed
+                // event is the configured one — no need to compare modifiers.
+                .with_handler(|app, _shortcut, event| {
+                    if event.state == ShortcutState::Pressed {
                         toggle_popup(app);
                     }
                 })
@@ -369,17 +487,33 @@ pub fn run() {
         .setup(|app| {
             let handle = app.handle();
 
-            // In-app shortcut is best-effort: works on X11/Windows/macOS,
-            // silently fails on Wayland. On Linux you should bind via your
-            // DE's Custom Shortcuts to `claude-usage-tray --toggle`.
-            let shortcut =
-                Shortcut::new(Some(Modifiers::CONTROL | Modifiers::ALT), Code::KeyL);
-            if let Err(e) = handle.global_shortcut().register(shortcut) {
-                eprintln!("[claude-hourglass] in-app shortcut Ctrl+Alt+L failed: {e}");
-            } else {
-                eprintln!(
-                    "[claude-hourglass] in-app shortcut Ctrl+Alt+L registered (Wayland: bind via DE)"
-                );
+            // Register the configured (or default) global shortcut. This
+            // succeeds on all platforms but only delivers events on
+            // macOS, Windows, and Linux/X11. Wayland users bind via DE.
+            let cfg = read_config();
+            let shortcut_str = cfg
+                .shortcut
+                .clone()
+                .unwrap_or_else(|| DEFAULT_SHORTCUT.to_string());
+            match parse_shortcut(&shortcut_str) {
+                Ok(s) => {
+                    if let Err(e) = handle.global_shortcut().register(s) {
+                        eprintln!(
+                            "[claude-hourglass] register {shortcut_str} failed: {e}"
+                        );
+                    } else if shortcut_supported() {
+                        eprintln!(
+                            "[claude-hourglass] global shortcut {shortcut_str} registered"
+                        );
+                    } else {
+                        eprintln!(
+                            "[claude-hourglass] global shortcut {shortcut_str} registered but won't fire on Wayland — bind via DE"
+                        );
+                    }
+                }
+                Err(e) => {
+                    eprintln!("[claude-hourglass] {e}");
+                }
             }
 
             let toggle_item =
@@ -389,7 +523,6 @@ pub fn run() {
             let quit_item = MenuItem::with_id(handle, "quit", "Quit", true, None::<&str>)?;
             let menu = Menu::with_items(handle, &[&toggle_item, &refresh_item, &quit_item])?;
 
-            // Custom monochrome tray icon (designed to read at panel sizes).
             let tray_icon = tauri::include_image!("icons/source/tray-icon.png");
 
             TrayIconBuilder::with_id("main-tray")
@@ -423,7 +556,9 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             get_usage,
             get_config,
-            set_session_key
+            set_session_key,
+            set_position,
+            set_shortcut
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

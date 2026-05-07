@@ -3,7 +3,23 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Claude Usage</title>
+    <title>Claude Hourglass</title>
+    <!-- Critical inline CSS: applied before external stylesheet loads.
+         Prevents the white flash on first paint under macOS WKWebView.
+         Note: do NOT set `color-scheme: light` here — on macOS that hints
+         WKWebView to draw an opaque light backing, which defeats the
+         window's `transparent: true` and shows as white in the panel's
+         6px inset gap. -->
+    <style>
+      :root,
+      html,
+      body {
+        background: transparent !important;
+        background-color: transparent !important;
+        margin: 0;
+        padding: 0;
+      }
+    </style>
     <link rel="stylesheet" href="/src/styles.css" />
     <script type="module" src="/src/main.ts" defer></script>
   </head>
@@ -50,9 +66,8 @@
       <div class="setup-overlay" id="setup-overlay" hidden>
         <div class="cal-title">Connect to claude.ai</div>
         <div class="cal-help">
-          Paste your <b>sessionKey</b> cookie. In a browser:
-          DevTools → Application → Cookies → claude.ai → copy
-          <b>sessionKey</b> value.
+          Paste your <b>sessionKey</b> cookie (DevTools → Application →
+          Cookies → claude.ai).
         </div>
         <form class="cal-form" id="setup-form">
           <input
@@ -63,6 +78,29 @@
             spellcheck="false"
             placeholder="sk-ant-sid01-..."
           />
+
+          <div class="prefs-row">
+            <div class="prefs-col">
+              <div class="prefs-label">popup position</div>
+              <div class="position-grid" id="position-grid">
+                <button type="button" data-position="top-left" class="position-cell" aria-label="Top left"></button>
+                <span class="position-spacer"></span>
+                <button type="button" data-position="top-right" class="position-cell" aria-label="Top right"></button>
+                <span class="position-spacer"></span>
+                <button type="button" data-position="center" class="position-cell" aria-label="Center"></button>
+                <span class="position-spacer"></span>
+                <button type="button" data-position="bottom-left" class="position-cell" aria-label="Bottom left"></button>
+                <span class="position-spacer"></span>
+                <button type="button" data-position="bottom-right" class="position-cell" aria-label="Bottom right"></button>
+              </div>
+            </div>
+            <div class="prefs-col prefs-col-grow">
+              <div class="prefs-label">global shortcut</div>
+              <button type="button" id="shortcut-input" class="shortcut-input">—</button>
+              <div class="shortcut-hint" id="shortcut-hint" hidden></div>
+            </div>
+          </div>
+
           <div class="cal-current" id="setup-current">—</div>
           <div class="cal-actions">
             <button type="button" class="cal-btn cal-btn-ghost" id="setup-clear">disconnect</button>

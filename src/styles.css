@@ -59,15 +59,14 @@ body {
   flex-direction: column;
   overflow: hidden;
   isolation: isolate;
-  transform: translateX(20px);
   opacity: 0;
-  transition:
-    transform 280ms var(--ease-spring),
-    opacity 200ms var(--ease-out);
+  /* Symmetric ease-in-out: visible at both ends without the front-loaded
+     plateau of `--ease-out`. 220ms is the sweet spot for "snappy but
+     not abrupt" — runs both the fade-in and fade-out at this rate. */
+  transition: opacity 220ms ease-in-out;
 }
 
 .panel.is-shown {
-  transform: translateX(0);
   opacity: 1;
 }
 
@@ -406,3 +405,113 @@ body {
   text-align: center;
 }
 .empty-overlay:hover { background: var(--bg-elevated); }
+
+/* ── Setup overlay: prefs row (position picker + shortcut) ──── */
+
+.setup-overlay {
+  /* Allow the form to scroll if it overflows the 480×180 panel. */
+  overflow-y: auto;
+}
+
+.prefs-row {
+  display: flex;
+  gap: 14px;
+  align-items: stretch;
+  margin: 4px 0 2px;
+}
+
+.prefs-col {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.prefs-col-grow { flex: 1; min-width: 0; }
+
+.prefs-label {
+  font-family: "Inter Variable", "Inter", system-ui, sans-serif;
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+/* ── Position grid (3×3, 5 active cells) ─────────────────────── */
+
+.position-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 14px);
+  grid-template-rows: repeat(3, 12px);
+  gap: 3px;
+  width: max-content;
+}
+
+.position-cell {
+  background: transparent;
+  border: 1px solid var(--hairline-strong);
+  border-radius: 2px;
+  padding: 0;
+  cursor: pointer;
+  transition:
+    background 140ms var(--ease-out),
+    border-color 140ms var(--ease-out);
+}
+
+.position-cell:hover {
+  border-color: var(--accent);
+}
+
+.position-cell.is-active {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.position-spacer {
+  display: block;
+}
+
+/* ── Shortcut capture input ─────────────────────────────────── */
+
+.shortcut-input {
+  width: 100%;
+  padding: 6px 10px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--hairline);
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--text);
+  text-align: center;
+  transition:
+    border-color 160ms var(--ease-out),
+    background 160ms var(--ease-out);
+}
+
+.shortcut-input:hover:not(:disabled) {
+  border-color: var(--hairline-strong);
+}
+
+.shortcut-input.is-capturing {
+  border-color: var(--accent);
+  background: color-mix(in oklch, var(--accent) 10%, var(--bg-elevated));
+  color: var(--accent-deep);
+}
+
+.shortcut-input:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  color: var(--text-faint);
+}
+
+.shortcut-hint {
+  font-size: 9.5px;
+  line-height: 1.4;
+  color: var(--text-faint);
+  margin-top: 2px;
+}
+
+.shortcut-hint b {
+  color: var(--text-dim);
+  font-weight: 500;
+}

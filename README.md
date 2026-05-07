@@ -41,6 +41,13 @@ sudo dnf install ./claude-hourglass-*.x86_64.rpm
 sudo apt install ./claude-hourglass_*_amd64.deb
 ```
 
+**macOS:** open the `.dmg`, drag **Claude Hourglass** to `/Applications`. The first launch is blocked by Gatekeeper because the app isn't signed with an Apple Developer certificate.
+
+- **macOS 14 (Sonoma) or earlier:** right-click the app in Finder → **Open** → click **Open** in the dialog.
+- **macOS 15 (Sequoia) or later:** Apple removed the Control-click bypass. Open **System Settings → Privacy & Security**, scroll to the bottom, find the message about Claude Hourglass being blocked, and click **Open Anyway** (admin auth required).
+
+Subsequent launches work normally.
+
 > **GNOME users:** the tray icon needs the
 > [AppIndicator and KStatusNotifierItem Support](https://extensions.gnome.org/extension/615/appindicator-support/)
 > extension.
@@ -102,6 +109,14 @@ popup — point it at the binary with `--toggle`:
 | Shortcut | any free combo |
 </details>
 
+<details>
+<summary><b>macOS</b></summary>
+
+The in-app shortcut works natively on macOS — no DE binding needed.
+Default: <kbd>Control</kbd>+<kbd>Option</kbd>+<kbd>L</kbd>. To change,
+edit `src-tauri/src/lib.rs` and rebuild.
+</details>
+
 CLI flags supported: `--toggle`, `--show`, `--hide`.
 
 ## Auto-start at login
@@ -117,6 +132,8 @@ Name=Claude Hourglass
 Exec=/usr/bin/claude-hourglass
 ```
 
+**macOS:** `System Settings` → **General** → **Login Items** → click **+** → add **Claude Hourglass**.
+
 ## Build from source
 
 ```sh
@@ -129,6 +146,10 @@ sudo dnf install \
 sudo apt install \
   libwebkit2gtk-4.1-dev librsvg2-dev libayatana-appindicator3-dev \
   build-essential libssl-dev
+
+# macOS prerequisites
+xcode-select --install   # if not already installed (provides clang, git, etc.)
+# Tauri uses native WKWebView on macOS — no extra system libs needed.
 
 git clone https://github.com/AbdullahAlattar/claude-hourglass
 cd claude-hourglass
@@ -144,7 +165,7 @@ Requires Rust 1.77+ and Node 18+.
 | Platform | Status |
 |---|---|
 | Linux (Fedora, Ubuntu, KDE, GNOME) | Tested |
-| macOS | Untested — PRs welcome |
+| macOS (Apple silicon, Intel) | Tested |
 | Windows | Untested — PRs welcome |
 
 ## Known limitations
