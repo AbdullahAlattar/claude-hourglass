@@ -24,6 +24,10 @@ shortcut — and a small popup window shows the same numbers
 `claude.ai/settings/usage` shows: current 5-hour session percent and
 time until reset. Auto-refreshes every minute while open.
 
+The popup's screen position (4 corners + center) and the global
+shortcut combo are configurable via the gear icon in the popup
+itself.
+
 Sourced directly from claude.ai's own internal usage endpoint, so the
 percent matches the dashboard exactly.
 
@@ -110,11 +114,17 @@ popup — point it at the binary with `--toggle`:
 </details>
 
 <details>
-<summary><b>macOS</b></summary>
+<summary><b>macOS / Windows / Linux X11</b></summary>
 
-The in-app shortcut works natively on macOS — no DE binding needed.
-Default: <kbd>Control</kbd>+<kbd>Option</kbd>+<kbd>L</kbd>. To change,
-edit `src-tauri/src/lib.rs` and rebuild.
+The in-app global shortcut works natively — no DE binding needed.
+Default: <kbd>Control</kbd>+<kbd>Option</kbd>+<kbd>L</kbd> on macOS,
+<kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>L</kbd> on Windows / X11 Linux.
+
+To change it: open the popup → click the gear icon → click the
+**global shortcut** field → press your desired combo. The new
+shortcut is saved to `~/.config/claude-hourglass/config.json` and
+re-registered live. (On Wayland the field is disabled — bind via
+your DE per the sections above instead.)
 </details>
 
 CLI flags supported: `--toggle`, `--show`, `--hide`.
