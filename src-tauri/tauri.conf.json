@@ -43,7 +43,6 @@
       "icons/icon.ico"
     ],
     "macOS": {
-      "_comment": "Ad-hoc signing (signingIdentity '-') applies a valid but un-trusted signature. arm64 macOS rejects unsigned binaries as 'damaged'; ad-hoc downgrades that to the standard 'unidentified developer' Gatekeeper warning, which the user can bypass via right-click → Open (Sonoma) or System Settings → Privacy & Security → Open Anyway (Sequoia).",
       "signingIdentity": "-"
     }
   }
