@@ -52,6 +52,8 @@ sudo apt install ./claude-hourglass_*_amd64.deb
 
 Subsequent launches work normally.
 
+**Windows:** download `claude-hourglass_*_x64-setup.exe` (NSIS, **recommended** — installs per-user under `%LOCALAPPDATA%`, no admin prompt) or the `.msi` (Windows Installer, system-wide, triggers UAC). Double-click to install. On first launch Microsoft Defender SmartScreen will show **"Windows protected your PC"** because the binary isn't signed with a code-signing certificate — click **More info → Run anyway**. Subsequent launches open directly. The app's tray icon shows in the notification area (click the `^` chevron to expand if Windows hid it).
+
 > **GNOME users:** the tray icon needs the
 > [AppIndicator and KStatusNotifierItem Support](https://extensions.gnome.org/extension/615/appindicator-support/)
 > extension.
@@ -66,9 +68,11 @@ your Claude session cookie:
 3. Click `sessionKey`. Copy the **Value** (starts with `sk-ant-sid01-…`).
 4. Paste into the popup. Save.
 
-The cookie is stored at `~/.config/claude-hourglass/config.json`
-(mode `0600`, atomic write). It never leaves your machine except to
-claude.ai itself. Sign out of claude.ai or click **Disconnect** to revoke.
+The cookie is stored at `~/.config/claude-hourglass/config.json` on
+Linux/macOS (mode `0600`, atomic write) or
+`%APPDATA%\claude-hourglass\config.json` on Windows. It never leaves
+your machine except to claude.ai itself. Sign out of claude.ai or
+click **Disconnect** to revoke.
 
 ## Keyboard shortcut
 
@@ -144,6 +148,8 @@ Exec=/usr/bin/claude-hourglass
 
 **macOS:** `System Settings` → **General** → **Login Items** → click **+** → add **Claude Hourglass**.
 
+**Windows:** press <kbd>Win</kbd>+<kbd>R</kbd>, type `shell:startup`, press Enter. In the folder that opens, right-click → **New** → **Shortcut**, and point it at the installed binary (NSIS default: `%LOCALAPPDATA%\Programs\Claude Hourglass\claude-hourglass.exe`; MSI default: `C:\Program Files\Claude Hourglass\claude-hourglass.exe`). The shortcut runs automatically next time you sign in.
+
 ## Build from source
 
 ```sh
@@ -161,6 +167,13 @@ sudo apt install \
 xcode-select --install   # if not already installed (provides clang, git, etc.)
 # Tauri uses native WKWebView on macOS — no extra system libs needed.
 
+# Windows prerequisites
+# Install "Build Tools for Visual Studio" (free) with the "Desktop development
+# with C++" workload, or install Visual Studio Community. This provides MSVC,
+# the Windows SDK, and the linker that the Rust msvc target needs.
+# WebView2 ships with Windows 11 and is auto-installed by the Tauri installer
+# on Windows 10 — no extra setup needed.
+
 git clone https://github.com/AbdullahAlattar/claude-hourglass
 cd claude-hourglass
 npm install
@@ -176,23 +189,27 @@ Requires Rust 1.77+ and Node 18+.
 |---|---|
 | Linux (Fedora, Ubuntu, KDE, GNOME) | Tested |
 | macOS (Apple silicon, Intel) | Tested |
-| Windows | Untested — PRs welcome |
+| Windows 10 / 11 | Tested |
 
 ## Known limitations
 
 - **Wayland window positioning**: GNOME's compositor decides where the
   popup appears (xdg-shell forbids apps from positioning their own
   toplevels). On X11/KDE the bottom-right anchor works.
+- **Windows 10 cosmetic transparency**: a thin 1-pixel border may appear
+  around the popup on Windows 10 due to an open upstream Tauri/WebView2
+  issue ([tauri#13176](https://github.com/tauri-apps/tauri/issues/13176)).
+  Rounded corners require Windows 11's DWM; on Windows 10 the panel
+  renders with square corners. Functional behavior is unaffected.
 - **Cookie expires** when you sign out of claude.ai. Re-paste from the
   gear icon when that happens.
 - **Unofficial endpoint**: see Disclaimer below.
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). Bug reports, platform fixes
-(macOS/Windows), and resilience to claude.ai endpoint changes are all
-welcome. Don't expect feature creep — the popup is intentionally
-single-glance.
+See [CONTRIBUTING.md](CONTRIBUTING.md). Bug reports, platform fixes,
+and resilience to claude.ai endpoint changes are all welcome. Don't
+expect feature creep — the popup is intentionally single-glance.
 
 ## Disclaimer
 

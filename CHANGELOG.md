@@ -6,6 +6,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.5] - 2026-05-12
+
+### Added
+
+- **Windows support.** The release workflow now builds `.msi` (Windows
+  Installer, system-wide via UAC) and `.exe` (NSIS, per-user, no admin)
+  artifacts on `windows-latest` runners alongside the existing Linux
+  `.rpm`/`.deb` and macOS `.dmg`. WebView2 is pulled in by the installer
+  on Win10 if missing (preinstalled on Win11). Tray icon, popup, and
+  in-app global shortcut (`Ctrl+Alt+L`) all work natively — no DE
+  binding workaround needed, since Windows uses `RegisterHotKey` (same
+  way macOS uses `NSEvent`).
+- **Per-OS CI coverage.** Added a `cargo check` job on `windows-latest`
+  in `ci.yml` so Windows-specific compile errors in
+  `#[cfg(windows)]`-gated code are caught on every PR instead of at
+  release tag time. `clippy` and `fmt` remain Linux-only since their
+  output is platform-agnostic for this codebase.
+
+### Fixed
+
+- **Config persistence was broken on Windows.** `config_dir()` only
+  consulted `XDG_CONFIG_HOME` and `HOME`, both of which are unset on a
+  vanilla Windows install (Windows uses `USERPROFILE`). The function
+  returned `None`, `write_config` errored out, and the session cookie
+  could never be saved — making the app effectively unusable on
+  Windows. Added a `cfg(windows)` branch that uses `%APPDATA%` (the
+  Roaming profile), placing config at
+  `%APPDATA%\claude-hourglass\config.json`. macOS keeps its existing
+  XDG-style path at `~/.config/claude-hourglass/` so installs from
+  v0.1.3/v0.1.4 aren't silently logged out by a path relocation.
+
+### Known limitations on Windows
+
+- **Windows 10** may render a thin 1-pixel border around the popup
+  ([tauri#13176](https://github.com/tauri-apps/tauri/issues/13176)) and
+  always renders square corners — DWM rounded corners are Windows 11
+  only. Functional behavior is unaffected on both versions.
+- **SmartScreen** shows "Windows protected your PC" on first launch
+  because the binary isn't code-signed. Click **More info → Run anyway**
+  to proceed (one-time). There is no ad-hoc signing equivalent on
+  Windows — only paid OV/EV certificates (or Microsoft Trusted Signing)
+  remove the warning. Same posture as the unsigned macOS build.
+
 ## [0.1.4] - 2026-05-12
 
 ### Fixed
@@ -163,7 +206,8 @@ Then double-click. Or just upgrade to v0.1.4.
 - Self-hosted fonts (no Google CDN dependency at runtime).
 - Atomic config writes at `0600` to keep the cookie file private.
 
-[Unreleased]: https://github.com/AbdullahAlattar/claude-hourglass/compare/v0.1.4...HEAD
+[Unreleased]: https://github.com/AbdullahAlattar/claude-hourglass/compare/v0.1.5...HEAD
+[0.1.5]: https://github.com/AbdullahAlattar/claude-hourglass/releases/tag/v0.1.5
 [0.1.4]: https://github.com/AbdullahAlattar/claude-hourglass/releases/tag/v0.1.4
 [0.1.3]: https://github.com/AbdullahAlattar/claude-hourglass/releases/tag/v0.1.3
 [0.1.2]: https://github.com/AbdullahAlattar/claude-hourglass/releases/tag/v0.1.2

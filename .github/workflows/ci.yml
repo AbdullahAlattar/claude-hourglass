@@ -12,17 +12,24 @@ env:
 
 jobs:
   rust:
-    name: rust (${{ matrix.kind }})
-    runs-on: ubuntu-latest
+    name: rust (${{ matrix.kind }} / ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        kind: [check, clippy, fmt]
+        include:
+          - { kind: check, os: ubuntu-latest }
+          - { kind: clippy, os: ubuntu-latest }
+          - { kind: fmt, os: ubuntu-latest }
+          # cargo check on Windows catches errors in the cfg(windows) branch
+          # of config_dir() that Linux check can't see. clippy/fmt stay
+          # Linux-only — their output is platform-agnostic for our code.
+          - { kind: check, os: windows-latest }
     steps:
       - uses: actions/checkout@v5
 
       - name: Install Linux build deps
-        if: matrix.kind != 'fmt'
+        if: matrix.os == 'ubuntu-latest' && matrix.kind != 'fmt'
         run: |
           sudo apt-get update
           sudo apt-get install -y \

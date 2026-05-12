@@ -22,6 +22,9 @@ jobs:
           # macOS: build .dmg only (.app is just the bundle, contained inside the dmg).
           - platform: macos-latest
             args: "--bundles dmg"
+          # Windows: MSI (winget/group-policy friendly) + NSIS (.exe, lighter installer).
+          - platform: windows-latest
+            args: "--bundles msi nsis"
 
     steps:
       - uses: actions/checkout@v5
@@ -61,6 +64,7 @@ jobs:
 
             **Linux:** install the .rpm (Fedora/RHEL) or .deb (Ubuntu/Debian).
             **macOS:** mount the .dmg, drag Claude Hourglass to /Applications. First launch is blocked by Gatekeeper. macOS 14 or earlier: right-click → Open → Open. macOS 15 (Sequoia) or later: System Settings → Privacy & Security → Open Anyway.
+            **Windows:** double-click the .msi (recommended — installs system-wide via Windows Installer) or the .exe (NSIS, lighter per-user install). SmartScreen will warn that the publisher is unknown; click **More info → Run anyway**.
           releaseDraft: true
           prerelease: false
           args: ${{ matrix.args }}

@@ -59,9 +59,19 @@ impl std::fmt::Debug for AppConfig {
 }
 
 fn config_dir() -> Option<PathBuf> {
+    // Windows: %APPDATA%\claude-hourglass\ — the Roaming profile, since the
+    // session cookie is portable across machines and follows the user.
+    // Linux/macOS: XDG_CONFIG_HOME or $HOME/.config — keeps macOS on the same
+    // path v0.1.3/v0.1.4 used, so existing installs aren't logged out by an
+    // unannounced relocation.
+    #[cfg(windows)]
+    let base = std::env::var_os("APPDATA").map(PathBuf::from)?;
+
+    #[cfg(not(windows))]
     let base = std::env::var_os("XDG_CONFIG_HOME")
         .map(PathBuf::from)
         .or_else(|| std::env::var_os("HOME").map(|h| PathBuf::from(h).join(".config")))?;
+
     Some(base.join("claude-hourglass"))
 }
 
