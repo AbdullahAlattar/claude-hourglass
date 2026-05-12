@@ -6,6 +6,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.6] - 2026-05-12
+
+### Security
+
+- **Bumped `tauri` 2.11.0 → 2.11.1** to patch
+  [CVE-2026-42184](https://github.com/advisories/GHSA-7gmj-67g7-phm9)
+  (origin confusion in `is_local_url()` on Windows and Android). Tauri's
+  `is_local_url()` only split the host on the first `.`, so a remote
+  page at e.g. `http://app.evil.com/` was classified as a local
+  `Origin::Local` and could invoke locally-scoped IPC commands.
+  Windows-only impact; Linux and macOS were unaffected by this CVE.
+  Our shipped surface for the attack was effectively zero — the app
+  never opens external URLs in its WebView, has no deep-link handlers,
+  no custom URI scheme registered beyond Tauri's default, and the
+  popup loads only the bundled frontend bundle. But the vulnerable
+  binary needed patching regardless. **v0.1.5 Windows installs should
+  upgrade to v0.1.6.** Linux/macOS v0.1.5 binaries are not at risk and
+  upgrading is optional.
+
+### Known dependency advisory (not patched)
+
+- **`glib` 0.18.5** triggers [GHSA-wrw7-89jp-8q8g](https://github.com/advisories/GHSA-wrw7-89jp-8q8g)
+  (`VariantStrIter::impl_get` unsoundness, fixed in glib 0.20). This is
+  a transitive dependency via Tauri's gtk-rs 0.18.x ecosystem and
+  cannot be bumped without Tauri itself upgrading. The bug manifests
+  as a potential NULL-pointer crash when enumerating GVariant strings
+  — a Linux GTK code path our app doesn't exercise (we don't iterate
+  GVariant string arrays). Reassessed when Tauri ships a release on
+  gtk-rs 0.20.
+
 ## [0.1.5] - 2026-05-12
 
 ### Added
@@ -206,7 +236,8 @@ Then double-click. Or just upgrade to v0.1.4.
 - Self-hosted fonts (no Google CDN dependency at runtime).
 - Atomic config writes at `0600` to keep the cookie file private.
 
-[Unreleased]: https://github.com/AbdullahAlattar/claude-hourglass/compare/v0.1.5...HEAD
+[Unreleased]: https://github.com/AbdullahAlattar/claude-hourglass/compare/v0.1.6...HEAD
+[0.1.6]: https://github.com/AbdullahAlattar/claude-hourglass/releases/tag/v0.1.6
 [0.1.5]: https://github.com/AbdullahAlattar/claude-hourglass/releases/tag/v0.1.5
 [0.1.4]: https://github.com/AbdullahAlattar/claude-hourglass/releases/tag/v0.1.4
 [0.1.3]: https://github.com/AbdullahAlattar/claude-hourglass/releases/tag/v0.1.3
