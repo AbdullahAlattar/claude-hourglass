@@ -6,6 +6,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.4] - 2026-05-12
+
+### Fixed
+
+- **macOS arm64 build was rejected as "damaged"** on Apple Silicon. The
+  binary inside the `.dmg` was completely unsigned (no `LC_CODE_SIGNATURE`
+  load command, no `_CodeSignature` directory in the `.app` bundle); arm64
+  macOS requires *at least* an ad-hoc signature, so AMFI refused to launch
+  the app even with quarantine removed. Added
+  `bundle.macOS.signingIdentity = "-"` to `tauri.conf.json` so Tauri's
+  bundler applies an ad-hoc signature via `codesign` during build.
+  Users now see the standard "unidentified developer" Gatekeeper warning
+  (with the documented right-click → Open or Settings → Privacy & Security
+  → Open Anyway bypass) instead of the "damaged" wall.
+
+### Workaround for v0.1.3 installs
+
+If you already installed v0.1.3 and hit "damaged and can't be opened":
+
+```sh
+sudo xattr -dr com.apple.quarantine "/Applications/Claude Hourglass.app"
+sudo codesign --force --deep --sign - "/Applications/Claude Hourglass.app"
+```
+
+Then double-click. Or just upgrade to v0.1.4.
+
 ## [0.1.3] - 2026-05-07
 
 ### Added
@@ -137,7 +163,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Self-hosted fonts (no Google CDN dependency at runtime).
 - Atomic config writes at `0600` to keep the cookie file private.
 
-[Unreleased]: https://github.com/AbdullahAlattar/claude-hourglass/compare/v0.1.3...HEAD
+[Unreleased]: https://github.com/AbdullahAlattar/claude-hourglass/compare/v0.1.4...HEAD
+[0.1.4]: https://github.com/AbdullahAlattar/claude-hourglass/releases/tag/v0.1.4
 [0.1.3]: https://github.com/AbdullahAlattar/claude-hourglass/releases/tag/v0.1.3
 [0.1.2]: https://github.com/AbdullahAlattar/claude-hourglass/releases/tag/v0.1.2
 [0.1.1]: https://github.com/AbdullahAlattar/claude-hourglass/releases/tag/v0.1.1
