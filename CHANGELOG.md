@@ -6,6 +6,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.7] - 2026-05-16
+
+### Fixed
+
+- **Silent popup hang on Linux with NVIDIA proprietary driver under
+  Wayland.** Clicking the tray icon did nothing — no popup appeared,
+  no error logged, no crash dialog. `webkit2gtk` 2.42+ defaults to a
+  DMA-BUF–based renderer that shares GPU buffers zero-copy with the
+  Wayland compositor, but the buffer-modifier handshake with the
+  NVIDIA proprietary driver hangs indefinitely: the driver advertises
+  DMA-BUF support but never completes the format negotiation Mutter
+  expects. WebKit blocks waiting for a buffer that never arrives →
+  popup has no backing surface → nothing renders. The tray icon still
+  works because it goes through `libayatana-appindicator` (GTK only,
+  no WebKit), so the failure mode is the confusing "tray click does
+  nothing." Reproducible on Fedora 43 + GNOME 47 Wayland + `nvidia`
+  555.x + `webkit2gtk-4.1` 2.52.x with an RTX 3080; same RPM works
+  fine on the same OS with Intel/AMD Mesa. Set
+  `WEBKIT_DISABLE_DMABUF_RENDERER=1` at process start in
+  `src-tauri/src/main.rs` (Linux only, before Tauri initialises),
+  falling back to shared-memory rendering. Slower than DMA-BUF on
+  paper, invisible for a tray popup that paints a handful of numbers
+  every 60s. macOS and Windows builds unaffected — they use WKWebView
+  and WebView2 respectively, not webkit2gtk. Users on a working
+  NVIDIA + Mesa NVK or future fixed driver/WebKit combo can opt back
+  into DMA-BUF with `WEBKIT_DISABLE_DMABUF_RENDERER=0 claude-hourglass`.
+  **NVIDIA + Wayland users on v0.1.6 or earlier should upgrade.**
+  Mesa users on any version: upgrading is optional, behaviour is
+  unchanged.
+
 ## [0.1.6] - 2026-05-12
 
 ### Security
@@ -236,7 +266,8 @@ Then double-click. Or just upgrade to v0.1.4.
 - Self-hosted fonts (no Google CDN dependency at runtime).
 - Atomic config writes at `0600` to keep the cookie file private.
 
-[Unreleased]: https://github.com/AbdullahAlattar/claude-hourglass/compare/v0.1.6...HEAD
+[Unreleased]: https://github.com/AbdullahAlattar/claude-hourglass/compare/v0.1.7...HEAD
+[0.1.7]: https://github.com/AbdullahAlattar/claude-hourglass/releases/tag/v0.1.7
 [0.1.6]: https://github.com/AbdullahAlattar/claude-hourglass/releases/tag/v0.1.6
 [0.1.5]: https://github.com/AbdullahAlattar/claude-hourglass/releases/tag/v0.1.5
 [0.1.4]: https://github.com/AbdullahAlattar/claude-hourglass/releases/tag/v0.1.4
